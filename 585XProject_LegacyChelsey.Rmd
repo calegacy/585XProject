@@ -1,0 +1,11 @@
+---
+title: "Collection of Shiny Apps for Introductory Statsitcs Concepts"
+author: "Chelsey Legacy"
+date: "April 11, 2017"
+output: html_document
+---
+
+#Background
+As a part of a larger Creative Component Project a Shiny app was created with tabs for different introductory statistics concepts. There are various tabs pertaining to the topics: linear regression, ANOVA, confidence intervals for one proportion, and sampling distributions for one mean and one proportion, and differences in means and proportions. These are all common topics for study in introductory statistic courses. When the Shiny app compiles all the topics are displayed for selection. However, some instructors and courses will not cover all of these topics and might want to use the Shiny app topics individually. Thus, the purpose of this project was to restructure the Shiny App so that only selected tabs will compile in the Shiny App.
+
+
