@@ -1,0 +1,57 @@
+---
+title: "Building a Shiny App for Introductory Statistics Concepts"
+author: "Chelsey Legacy"
+date: "April 25, 2017"
+output: ioslides_presentation
+runtime: shiny
+---
+
+## Introduction
+
+- Background
+- Shiny App for Introductory Statistics Concepts
+
+## Introduction
+
+- Technology can help illustrate basic statistics concepts for introductory students
+- CC: Shiny App for introductory statistics concepts
+- Number of topics kept expanding
+
+## Topics:
+
+- Correlation
+- Linear Equations
+- Outliers
+- Sampling distribution for mean (one & two means)
+- Sampling distrubtution for proportion (one & two proportions)
+- Confidence interval concepts using proportions
+- ANOVA
+
+## Pros and Cons of Many topics
+- (+) More materials
+- (-) Not all material may be relevant to the coursework
+- (+) More buttons to click!
+- (-) More chances to click the wrong button 
+
+## Potential Uses 
+
+- Lecture supplement
+- Lab 
+- Worksheets
+- *New goal: add flexibility to tab selection
+
+  
+## Tab Options
+
+- Choose the code you want for each section via gitHub
+- You can choose within the Shiny App 
+  - Better for people without R programming background
+  
+  
+  
+## Shiny App for Introductory Statistics Concepts......
+
+
+
+
+
