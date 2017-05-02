@@ -1,11 +1,27 @@
+#combine ui and server
+
+#Libraries
+
+library(markdown)
+library(ggplot2)
+library(shinydashboard)
+library(ggmosaic)
+library(datasets)
+library(shinythemes)
+
+library(shiny)
+library(MASS)
+library(RColorBrewer)
+
+library(grid)
+library(gridExtra)
+
 library(shiny)
 library(shinydashboard)
 library(LaplacesDemon)
 
-rbern(5,0.5)
-
 shinyApp(
-# Create the UI with a dashboard for the project.
+  # Create the UI with a dashboard for the project.
   # The dashboard will provide a space to add and delete desired panels.
   ui = dashboardPage(
     dashboardHeader(),
@@ -17,14 +33,13 @@ shinyApp(
       checkboxGroupInput("checkGroup", label = h3("Topic Selction"),
                          choices = list("One Proportion" = 1, "Confidence Interval" = 2, "One Mean" = 3,
                                         "Two Proportions" = 4, "Two Means" = 5, "Correlation" = 6, "Outliers" = 7,
-                                        "Equation" = 8, "ANOVA" = 9))
+                                        "Equation" = 8, "ANOVA Means" = 9, "ANOVA St Dev" = 10, "ANOVA Sample Size" = 11))
     ),
     # This code will allow the tab selections we create to appear in the output.
     dashboardBody(
       uiOutput('mytabs')
-  )
+    )
   ),
-
 
 
   server = function(input, output, session){
@@ -38,7 +53,7 @@ shinyApp(
       # giving us the new collection of panels to build out UI output.
       newTabPanels <- list(
         # One Proportion Sampling Distribution
-        tabPanel(h6("Sampling Distribution"),
+        tabPanel(h6("One Proportion"),
                  column(width = 2,
 
                         numericInput("popProp", "Population Proportion",
@@ -70,12 +85,16 @@ shinyApp(
                    ),
                    box(width = 4, title = NULL, status = "primary",
                        sliderInput("cIDemoSampSize", "Sample Size", value = 25, min = 25, max = 500, step = 5)
+                   ),
+                   box(width = 4, title = NULL, status = "primary",
+                       sliderInput("cIDemoNumSamp", "Number of Samples", value = 25, min = 1, max = 100, step = 24)
                    )
                  ),
                  fluidRow(
                    box(width = 10, title = NULL, status = "primary",
-                       plotOutput("sampCLPlot")
-                   )
+                       plotOutput("sampCLPlot")),
+                   actionButton("redrawCI", "Draw")
+
 
                  )
         ),
@@ -130,8 +149,7 @@ shinyApp(
                   column( width = 6,
                           verbatimTextOutput("twoPropSampleDist"),
                           fluidRow(
-                            plotOutput("sampleDistG1", width = 'auto', height = 150),
-                            plotOutput("sampleDistG2", width = 'auto', height = 150)
+                            plotOutput("sampleDistG1", width = 'auto', height = 200)
                           ),
                           verbatimTextOutput("twoPropSampDist"),
                           plotOutput("samplingDistTP", width = 'auto', height = 200)
@@ -160,10 +178,10 @@ shinyApp(
 
                   ),
                   column(width = 6,
-                         verbatimTextOutput("twoMeansSampleDist"),
-                         plotOutput("sampleDistM1", width = '100%', height = 150),
-                         plotOutput("sampleDistM2", width = '100%', height = 150),
                          verbatimTextOutput("twoMeansSampDist"),
+                         plotOutput("sampleDistM1", width = 'auto', height = 300),
+
+                         verbatimTextOutput("twoMeansSamplingDist"),
                          plotOutput("samplingDistTM", width = '100%', height = 200)
 
                   )
@@ -179,12 +197,11 @@ shinyApp(
                              sliderInput("correlation", "Correlation", value = 0.1, min = -1, max =1, step = 0.01)
 
                          ),
-                         box(
-                           width =12, status = "primary",
 
-                           plotOutput("corrPlot")
 
-                         ))
+                         plotOutput("corrPlot", width = '400', height = '400')
+
+                  )
 
         ),
 
@@ -193,7 +210,11 @@ shinyApp(
 
                  column(
                    width = 4, status= "primary",
-                   selectInput("dataset", "Choose Data Set:", choices = c("Dataset 1","Dataset 2", "Dataset 3", "Dataset 4")),
+                   numericInput("outX", "Outlier X",
+                                value = 0.3,min = 0, max = 1, step = 0.01),
+                   numericInput("outY", "Outlier Y",
+                                value = 0.3,min = 0, max = 1, step = 0.01),
+                   actionButton("outData", "Plot Data"),
                    checkboxInput("fitLine", label = "Fit Line", value = FALSE),
                    checkboxInput("fitLineNoPt", label = "Fit Line Without Point", value = FALSE),
                    verbatimTextOutput("lineSum"),
@@ -240,8 +261,8 @@ shinyApp(
         ),
 
 
-        #ANOVA
-        tabPanel(h6("ANOVA"),
+        #ANOVA Mean
+        tabPanel(h6("ANOVA Means"),
 
 
                  fluidRow(
@@ -249,42 +270,96 @@ shinyApp(
 
                    column(width = 4,
 
-                          sliderInput("anovaMean1", h6("Mean 1"), value = 30, min = 10, max =50, step = 1),
-                          sliderInput("anovaSD1", h6("St Dev 1"), value = 1, min = 1, max =50, step = 1),
-                          sliderInput("sampSizeANOVA", h6("Sample Size"), value = 50, min = 10, max =100, step = 5)
+                          sliderInput("anovaMean1", h6("Mean 1"), value = 30, min = 10, max =50, step = 1)
                    ),
                    column(width = 4,
                           sliderInput("anovaMean2", h6("Mean 2"), value = 30, min = 10, max =50, step = 1),
-                          sliderInput("anovaSD2", h6("St Dev 2"), value = 1, min = 1, max =50, step = 1),
-                          actionButton("goAnova", "Draw",class="btn btn-success btn")
+                          actionButton("goAnovaMean", "Draw",class="btn btn-success btn")
                    ),
                    column(width = 4,
-                          sliderInput("anovaMean3", h6("Mean 3"), value = 30, min = 10, max =50, step = 1),
+                          sliderInput("anovaMean3", h6("Mean 3"), value = 30, min = 10, max =50, step = 1)
+                   )
+                 ),
+                 fluidRow(
+                   column(width = 8,
+                          plotOutput("anovaPlotMean", width = "auto", height = 500)
+                   ),
+                   column( width = 3,
+                           tableOutput("anovaDatSumMean"),
+                           tableOutput("anovaTableMean")
+                   )
+                 )
+        ),
+        tabPanel(h6("ANOVA St Dev"),
+
+
+                 fluidRow(
+
+
+                   column(width = 4,
+
+                          sliderInput("anovaSD1", h6("St Dev 1"), value = 1, min = 1, max =50, step = 1)
+
+                   ),
+                   column(width = 4,
+
+                          sliderInput("anovaSD2", h6("St Dev 2"), value = 1, min = 1, max =50, step = 1),
+                          actionButton("goAnovaSD", "Draw",class="btn btn-success btn")
+                   ),
+                   column(width = 4,
                           sliderInput("anovaSD3", h6("St Dev 3"), value = 1, min = 1, max =50, step = 1)
                    )
                  ),
                  fluidRow(
                    column(width = 8,
-                          plotOutput("anovaPlot", width = "auto", height = 500)
+                          plotOutput("anovaPlotSD", width = "auto", height = 500)
                    ),
                    column( width = 3,
-                           tableOutput("anovaDatSum"),
-                           tableOutput("anovaTable")
+                           tableOutput("anovaDatSumSD"),
+                           tableOutput("anovaTableSD")
                    )
                  )
-        )
+        ) ,
+        tabPanel(h6("ANOVA Sample Size"),
 
+
+                 fluidRow(
+
+
+                   column(width = 4,
+
+
+                          sliderInput("sampSizeANOVA", h6("Sample Size"), value = 50, min = 10, max =100, step = 5)
+                   ),
+                   column(width = 4,
+
+                          actionButton("goAnovaSS", "Draw",class="btn btn-success btn")
+
+
+                   ),
+                   fluidRow(
+                     column(width = 8,
+                            plotOutput("anovaPlotSS", width = "auto", height = 500)
+                     ),
+                     column( width = 3,
+                             tableOutput("anovaDatSumSS"),
+                             tableOutput("anovaTableSS")
+                     )
+                   )
+                 )
+
+        )
       )
 
 
       # Choose the new tabs based on the input from the user.
       collectNewTabs = newTabPanels[c(as.numeric(input$checkGroup))]
 
-        # doCall creates the layout for the tabsetPanel based on the selection above
-         do.call(tabsetPanel, collectNewTabs)
+      # doCall creates the layout for the tabsetPanel based on the selection above
+      do.call(tabsetPanel, collectNewTabs)
     })
 
-# ------------ This section will contain all the server code that goes with each tab. ------------- #
+    # ------------ This section will contain all the server code that goes with each tab. ------------- #
 
 
     # -------------------------------------------- Inference for One Proportion Sampling Dist. ----------------------------#
@@ -334,11 +409,14 @@ shinyApp(
       return(v)
     })
 
-
+    bins = reactive({
+      bin = (3.5*sd(samples()) )/(input$sampleSize^(1/3))
+      return(bin)
+    })
 
     # Histogram of the sampling distribution
     output$samplingDist =renderPlot({
-      ggplot(data = data.frame(samples()),aes(samples()))+ geom_histogram(binwidth = 0.01) +xlab("Sample Proportion") +ylab("Number of Samples")
+      ggplot(data = data.frame(samples()),aes(samples()))+ geom_histogram(binwidth = bins()) +xlab("Sample Proportion") +ylab("Number of Samples")
     })
 
     # Population summary info to be displayed in a table
@@ -359,9 +437,9 @@ shinyApp(
     #--------------------------------------------- One proportion CIs ---------------------------------------------------- #
 
     # Generate 20 sample p_hats to create confidence intervals around
-    twSamps = eventReactive(input$cIDemoSampSize,{
+    twSamps = reactive({
       tsampCL = NULL
-      for(i in 1:20){
+      for(i in 1:input$cIDemoNumSamp){
 
         # Get the proportion of "successes" for the generated sample
         countPropCL = binomProb(input$cIDemoSampSize, 0.5)
@@ -378,22 +456,8 @@ shinyApp(
 
     # Set the z-value to be the value input by the user
     zlev = reactive({
-      if(input$cIDemoCL  == 80){
-        zlev = 1.282
-      }
-      if(input$cIDemoCL == 85){
-        zlev = 1.44
-      }
-      if(input$cIDemoCL == 90){
-        zlev = 1.645
-      }
-      if(input$cIDemoCL == 95){
-        zlev = 1.96
-      }
-      if(input$cIDemoCL == 99){
-        zlev = 2.576
-      }
-      return(zlev)
+      lev = qnorm(((100 -  (100-input$cIDemoCL)/2)/100), 0,1)
+      return(lev)
     })
 
     # Calculate the upper bounds for the confidence intervals
@@ -411,7 +475,7 @@ shinyApp(
     # Color the interval based on whether or not they capture the true population proportion
     colorCLDemo = reactive({
       coldemo = NULL
-      for(i in 1:20){
+      for(i in 1:input$cIDemoNumSamp){
         # Color the intervals blue if they contain 0.4 (the set value for the population parameter)
         if(lowCLDemo()[i] <= 0.5 && 0.5  <= upCLDemo()[i]   ){
 
@@ -495,9 +559,13 @@ shinyApp(
       return(v)
     })
 
+    binsOM = reactive({
+      bin = (3.5*sd(samplesOM()) )/(input$sampleSizeOM^(1/3))
+      return(bin)
+    })
     # Output a histogram of the sampling distribution of the sample means
     output$samplingDistOM =renderPlot({
-      ggplot(data = data.frame(samplesOM()),aes(x = samplesOM())) + geom_histogram()+xlab("Sample Means") +ylab("Number of Samples")
+      ggplot(data = data.frame(samplesOM()),aes(x = samplesOM())) + geom_histogram(binwidth = binsOM())+xlab("Sample Means") +ylab("Number of Samples")
 
     })
 
@@ -521,45 +589,41 @@ shinyApp(
     #--------------------------------------------- Inference in Two Proportions ---------------------------------------#
 
     # Calculations to get a sample distribution for group 1
-    pickP1Vect = eventReactive(input$go2Prop,{
-      pickfp1 = rbinom(input$sampleSizeGP1,1, input$popPropG1P)
+    pickP1Prop = eventReactive(input$go2Prop,{
+      pickfp1 = binomProb(input$sampleSizeGP1, input$popPropG1P)
       return(pickfp1)
     })
-    # Get count of "successes" in the sample for group 1
-    npickP1Prop = eventReactive(input$go2Prop,{
-      npickp1f = length(which(pickP1Vect() == 1))/input$sampleSizeGP1
-      return(npickp1f)
+
+    # Generate a binomial sample for group 2
+    pickP2Prop = eventReactive(input$go2Prop,{
+      pickfp2 =binomProb(input$sampleSizeGP2, input$popPropG2P)
+      return(pickfp2)
     })
+
+    propDat = reactive({data.frame(
+      sf = c(rep("Success", input$sampleSizeGP1*pickP1Prop()),rep("Failure", input$sampleSizeGP1*(1-pickP1Prop())),
+             rep("Success", input$sampleSizeGP2*pickP2Prop()),rep("Failure", input$sampleSizeGP2*(1-pickP2Prop()))),
+      grp = c(rep("Group 1", input$sampleSizeGP1), rep("Group 2", input$sampleSizeGP2) )
+    )
+
+    })
+
 
     # Sample Distribution output for group 1 sample
     output$sampleDistG1 = renderPlot({
-      qplot(as.factor(pickP1Vect()),xlab = "Category", ylab = "Count") + labs(title = "Group 1")
+      ggplot(data = propDat()) +  geom_mosaic(aes(x = product(sf,grp), fill = as.factor(sf)))+xlab("Group")+
+        guides(fill=guide_legend(title="Category"))
     })
 
     ####  Group 2 Calculations ####
 
-    # Generate a binomial sample for group 2
-    pickP2Vect = eventReactive(input$go2Prop,{
-      pickfp2 = rbinom(input$sampleSizeGP2,1, input$popPropG2P)
-      return(pickfp2)
-    })
 
-    npickP2Prop = eventReactive(input$go2Prop,{
-      npickp2f = length(which(pickP2Vect() ==1))/input$sampleSizeGP2
-      return(npickp2f)
-    })
 
-    #Sample Distribution output plot for group 2
-    output$sampleDistG2 = renderPlot({
-      qplot(as.factor(pickP2Vect()), xlab = "Category", ylab = "Count") + labs(title = "Group 2")
-    })
-
-    ####
     #Sample summary information for two proportions to be displyed in a table
     samplesumP2 = eventReactive(input$go2Prop,{data.frame(
-      Prop1 = npickP1Prop(),
-      Prop2 = npickP2Prop(),
-      Diff =npickP1Prop()-npickP2Prop()
+      Prop1 = pickP1Prop(),
+      Prop2 = pickP2Prop(),
+      Diff =pickP1Prop()-pickP2Prop()
     )
     })
 
@@ -574,20 +638,20 @@ shinyApp(
     samplesP2 = eventReactive(input$go2Prop,{
       # If there is only one sample needed, use the one created above
       if(input$numSampGP == 1){
-        return(npickP1Prop()-npickP2Prop())
+        return(pickP1Prop()-pickP2Prop())
       }
       # If many samples are needed, draw many samples for two groups
       if(input$numSampGP > 1){
-        vp2 = c(npickP1Prop()-npickP2Prop())
+        vp2 = c(pickP1Prop()-pickP2Prop())
         for(i in 2:input$numSampGP){
 
           npickdiffp = reactive({
-            newpickp1 = rbinom(input$sampleSizeGP1,1, input$popPropG1P)
-            npSamp1 = length(which(newpickp1 == 1))/input$sampleSizeGP1
-            newpickp2 = rbinom(input$sampleSizeGP2,1, input$popPropG1P)
-            npSamp2 = length(which(newpickp2 == 1))/input$sampleSizeGP2
+            newpickp1 = binomProb(input$sampleSizeGP1, input$popPropG1P)
+
+            newpickp2 = binomProb(input$sampleSizeGP2, input$popPropG2P)
+
             # Calculate the difference in the two samples
-            newpropdiff  = npSamp1 - npSamp2
+            newpropdiff  = newpickp1 - newpickp2
             # Return the difference of the two samples
             return(newpropdiff)
           })
@@ -599,9 +663,13 @@ shinyApp(
       return(vp2)
     })
 
+    binsTwoProp = reactive({
+      bin = (3.5*sd(samplesP2()) )/(input$sampleSizeGP1^(1/3))
+      return(bin)
+    })
     # Output the plot for the sampling distribution for the difference in proportions
     output$samplingDistTP =renderPlot({
-      qplot(samplesP2(), xlab = "Difference in Proportions", ylab = "Number of Samples", binwidth = 0.01)
+      qplot(samplesP2(), xlab = "Difference in Proportions", ylab = "Number of Samples", binwidth = binsTwoProp())
     })
 
 
@@ -609,8 +677,6 @@ shinyApp(
     popSumTP = reactive({data.frame(
       Mean = mean(samplesP2()),
       "Standard Deviation" = sd(samplesP2())
-
-
     )
     })
 
@@ -620,8 +686,7 @@ shinyApp(
     })
 
     # Output the text labels for the Distributions and test options
-    output$twoPropSampleDist <- renderText({ "Data Distributions" })
-
+    output$twoPropSampleDist <- renderText({ "Data Distribution" })
     output$twoPropSampDist <- renderText({ "Sampling Distribution" })
 
     # --------------------------------------------- Two Means Code -----------------------------------------------------#
@@ -632,10 +697,7 @@ shinyApp(
       return(pickfM1)
     })
 
-    #Sample Distribution plot for group one
-    output$sampleDistM1 = renderPlot({
-      qplot(pickM1(), xlab = "Value", ylab = "Count")+ labs( title = "Group 1")
-    })
+
 
     # Generate a sample for group two
     pickM2 = eventReactive(input$go2Mean,{
@@ -643,10 +705,25 @@ shinyApp(
       return(pickfM2)
     })
 
+    # Make data frame
+    datTM = reactive({data.frame(
+      dataTM = c(pickM1(), pickM2()),
+      groupTM = c(rep("Group 1", input$sampleSizeTM1), rep("Group 2", input$sampleSizeTM2))
+    )
 
-    #Sample Distribution plot for group two
-    output$sampleDistM2 = renderPlot({
-      qplot(pickM2(), xlab = "Value", ylab = "Count") + labs(title = "Group 2")
+    })
+
+    #Sample Distribution plot
+    output$sampleDistM1 = renderPlot({
+
+
+      ggplot(datTM(), aes(x=groupTM, y=dataTM, fill = groupTM)) +
+        geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.5, binwidth = binsTM())+
+        stat_summary(fun.y=mean, geom="point", shape=5,size=6, color="black")+
+        labs(x = "Group", y = "Value")+
+        guides(fill=guide_legend(title="Group"))+scale_y_continuous(NULL, breaks = NULL)
+
+
     })
 
     # Table summary information for groups one and two
@@ -688,12 +765,16 @@ shinyApp(
       return(vm)
     })
 
+    binsTM = reactive({
+      bin = (3.5*sd(samplesTM()) )/(input$sampleSizeTM1^(1/3))
+      return(bin)
+    })
     # Plot the sampling distribution for the differences in means
     output$samplingDistTM =renderPlot({
-      qplot(samplesTM(), xlab = "Value", ylab = "Count")
+      qplot(samplesTM(), xlab = "Value", ylab = "Count", binwidth = binsTM())
+
+
     })
-
-
 
 
     # Sampling distribution and test statistics information to be displayed in a table
@@ -711,7 +792,7 @@ shinyApp(
     # Text output to label the distributions and test options
 
     output$twoMeansSampDist <- renderText({ "Data Distribution" })
-    output$twoMeansSampleDist <- renderText({ "Sampling Distribution" })
+    output$twoMeansSamplingDist <- renderText({ "Sampling Distribution" })
     # --------------------------------------------- Linear Regression Code ----------------------------------------------#
     #Correlation Tab
 
@@ -727,33 +808,14 @@ shinyApp(
     })
 
     # Outliers tab
-    # Select the proper dataset to analyze based on the user input
-    getData = reactive({
-      if(input$dataset == "Dataset 1"){
-        dataX = c(seq(1,20, 1), 30)
-        dataY =  c(0.05, 0.40, 0.94, 1.69, 1.83, 3.06, 3.86, 4.14, 5.63, 7.69, 9.65, 10.16,
-                   11.72, 12.69, 13.05, 14.38, 16.06, 17.75, 18.52, 19.55, 30)
-      }
-      if(input$dataset == "Dataset 2"){
-        dataX = c(seq(1,20, 1), 20)
-        dataY =  c(0.05, 0.40, 0.94, 1.69, 1.83, 3.06, 3.86, 4.14, 5.63, 7.69, 9.65, 10.16,
-                   11.72, 12.69, 13.05, 14.38, 16.06, 17.75, 18.52, 19.55, 50)
-      }
-      if(input$dataset == "Dataset 3"){
-        dataX = c(seq(1,20, 1), 20)
-        dataY =  c(0.05, 0.40, 0.94, 1.69, 1.83, 3.06, 3.86, 4.14, 5.63, 7.69, 9.65, 10.16,
-                   11.72, 12.69, 13.05, 14.38, 16.06, 17.75, 18.52, 19.55, 0)
-      }
-      if(input$dataset == "Dataset 4"){
-        dataX = c(seq(1,20, 1), 7)
-        dataY =  c(0.05, 0.40, 0.94, 1.69, 1.83, 3.06, 3.86, 4.14, 5.63, 7.69, 9.65, 10.16,
-                   11.72, 12.69, 13.05, 14.38, 16.06, 17.75, 18.52, 19.55, 10)
-      }
-      dataXY = data.frame(dataX,dataY)
-      return(dataXY)
 
+    getData = eventReactive(input$outData,{
+      datxy = as.data.frame(mvrnorm(20, mu = c(0,0),
+                                    Sigma = matrix(c(1,0.99,0.99,1),, ncol = 2),
+                                    empirical = TRUE))
+      datnew = data.frame(dataX = c(datxy$V1, input$outX), dataY = c(datxy$V2, input$outY))
+      return(datnew)
     })
-
     # Print the plot for the high leverage data
     output$outlierPlot = renderPlot({
       # Print the plot with all the data
@@ -918,34 +980,34 @@ shinyApp(
 
 
 
-    # ----------------------------------------- ANOVA -------------------- #
+    # ----------------------------------------- ANOVA Mean -------------------- #
 
     # Generate data for 3 different groups based on the input means, standard deviations, and sample sizes
 
-    group1Data = eventReactive(input$goAnova, {
-      dat1 = rnorm(input$sampSizeANOVA, input$anovaMean1, input$anovaSD1)
+    group1Data = eventReactive(input$goAnovaMean, {
+      dat1 = rnorm(50, input$anovaMean1,10)
       return(dat1)
     })
 
-    group2Data = eventReactive(input$goAnova, {
-      dat2 = rnorm(input$sampSizeANOVA, input$anovaMean2, input$anovaSD2)
+    group2Data = eventReactive(input$goAnovaMean, {
+      dat2 = rnorm(50, input$anovaMean2,10)
       return(dat2)
     })
 
-    group3Data = eventReactive(input$goAnova,{
-      dat3 = rnorm(input$sampSizeANOVA, input$anovaMean3, input$anovaSD3)
+    group3Data = eventReactive(input$goAnovaMean,{
+      dat3 = rnorm(50, input$anovaMean3, 10)
       return(dat3)
     })
 
     # Combine all the data for the 3 groups
-    g123Data = eventReactive(input$goAnova, {
+    g123Data = eventReactive(input$goAnovaMean, {
       alData = c(group1Data(), group2Data(), group3Data())
       return(alData)
     })
 
     # Make a vector of the categories that each data point is in
-    groupList = eventReactive(input$goAnova, {
-      grpList = c(rep("group1", input$sampSizeANOVA), rep("group2", input$sampSizeANOVA), rep("group3", input$sampSizeANOVA))
+    groupList = eventReactive(input$goAnovaMean, {
+      grpList = c(rep("group1", 50), rep("group2", 50), rep("group3", 50))
       return(grpList)
     })
 
@@ -956,8 +1018,11 @@ shinyApp(
     })
 
     # Dotplot of the threee groups of data colored and faceted by group
-    output$anovaPlot = renderPlot( {
-      qplot(data = dframe(), x =g123Data(), geom = "dotplot", fill = groupList(), xlab = "x")+facet_grid(facets = groupList()~., scales = "free")+
+    output$anovaPlotMean = renderPlot( {
+      ggplot(dframe(), aes(x=groupList(), y=g123Data(), fill = groupList())) +
+        geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.5,binwidth = 1)+
+        stat_summary(fun.y=mean, geom="point", shape=5,size=6, color="black")+
+        labs(x = "Group", y = "Value")+
         guides(fill=guide_legend(title="Group"))+scale_y_continuous(NULL, breaks = NULL)
 
     })
@@ -975,12 +1040,12 @@ shinyApp(
     })
 
     # Output an ANOVA table form above
-    output$anovaTable = renderTable({
+    output$anovaTableMean = renderTable({
       an()
     })
 
     # Give the actual means & standard deviations of each group generated from the input from the user
-    anovaSum = reactive({data.frame(
+    anovaSumMean = reactive({data.frame(
       Group = c("Group1", "Group2", "Group3"),
       Means = c(mean(group1Data()), mean(group2Data()), mean(group3Data())),
       StDev = c(sd(group1Data()),sd(group2Data()), sd(group3Data()))
@@ -988,18 +1053,171 @@ shinyApp(
     })
 
     # Output the summary information about the three groups
-    output$anovaDatSum = renderTable({
-      anovaSum()
+    output$anovaDatSumMean = renderTable({
+      anovaSumMean()
+    })
+
+    # ------- ANOVA SD --------#
+
+
+    # Generate data for 3 different groups based on the input means, standard deviations, and sample sizes
+
+    group1DataSD = eventReactive(input$goAnovaSD, {
+      dat1 = rnorm(50, 20,input$anovaSD1)
+      return(dat1)
+    })
+
+    group2DataSD = eventReactive(input$goAnovaSD, {
+      dat2 = rnorm(50, 20,input$anovaSD2)
+      return(dat2)
+    })
+
+    group3DataSD = eventReactive(input$goAnovaSD,{
+      dat3 = rnorm(50, 20, input$anovaSD3)
+      return(dat3)
+    })
+
+    # Combine all the data for the 3 groups
+    g123DataSD = eventReactive(input$goAnovaSD, {
+      alDataSD = c(group1DataSD(), group2DataSD(), group3DataSD())
+      return(alDataSD)
+    })
+
+    # Make a vector of the categories that each data point is in
+    groupListSD = eventReactive(input$goAnovaSD, {
+      grpList = c(rep("Group 1", 50), rep("Group 2", 50), rep("Group 3", 50))
+      return(grpList)
+    })
+
+    # Create a data frame all the data and the corresponding groups the data point goes in
+    dframeSD = reactive( {
+      newframe = data.frame(g123DataSD(), groupListSD())
+      return(newframe)
+    })
+
+    # Dotplot of the threee groups of data colored and faceted by group
+    output$anovaPlotSD = renderPlot( {
+      ggplot(dframeSD(), aes(x=groupListSD(), y=g123DataSD(), fill = groupListSD())) +
+        geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.5, binwidth = 1)+
+        stat_summary(fun.y=mean, geom="point", shape=5,size=6, color="black")+
+        labs(x = "Group", y = "Value")+
+        guides(fill=guide_legend(title="Group"))+scale_y_continuous(NULL, breaks = NULL)
+
+    })
+
+    # Make a linear model based on the data in order to do an ANOVA analysis
+    modSD=reactive({
+      ll = lm(g123DataSD()~groupListSD())
+      return(ll)
+    })
+
+    # Get ANOVA test information
+    anSD =reactive({
+      model = anova(modSD())
+      return(model)
+    })
+
+    # Output an ANOVA table form above
+    output$anovaTableSD = renderTable({
+      anSD()
+    })
+
+    # Give the actual means & standard deviations of each group generated from the input from the user
+    anovaSumSD = reactive({data.frame(
+      Group = c("Group1", "Group2", "Group3"),
+      Means = c(mean(group1DataSD()), mean(group2DataSD()), mean(group3DataSD())),
+      StDev = c(sd(group1DataSD()),sd(group2DataSD()), sd(group3DataSD()))
+    )
+    })
+
+    # Output the summary information about the three groups
+    output$anovaDatSumSD = renderTable({
+      anovaSumSD()
+    })
+
+    #------- ANOVA SS ------- #
+
+
+    # Generate data for 3 different groups based on the input means, standard deviations, and sample sizes
+
+    group1DataSS = eventReactive(input$goAnovaSS, {
+      dat1 = rnorm(input$sampSizeANOVA, 20,5)
+      return(dat1)
+    })
+
+    group2DataSS = eventReactive(input$goAnovaSS, {
+      dat2 = rnorm(input$sampSizeANOVA, 20,5)
+      return(dat2)
+    })
+
+    group3DataSS = eventReactive(input$goAnovaSS,{
+      dat3 = rnorm(input$sampSizeANOVA, 20, 5)
+      return(dat3)
+    })
+
+    # Combine all the data for the 3 groups
+    g123DataSS = eventReactive(input$goAnovaSS, {
+      alDataSS = c(group1DataSS(), group2DataSS(), group3DataSS())
+      return(alDataSS)
+    })
+
+    # Make a vector of the categories that each data point is in
+    groupListSS = eventReactive(input$goAnovaSS, {
+      grpList = c(rep("Group 1", input$sampSizeANOVA), rep("Group 2", input$sampSizeANOVA), rep("Group 3", input$sampSizeANOVA))
+      return(grpList)
+    })
+
+    # Create a data frame all the data and the corresponding groups the data point goes in
+    dframeSS = reactive( {
+      newframe = data.frame(g123DataSS(), groupListSS())
+      return(newframe)
+    })
+
+    # Dotplot of the threee groups of data colored and faceted by group
+    output$anovaPlotSS = renderPlot( {
+      ggplot(dframeSS(), aes(x=groupListSS(), y=g123DataSS(), fill = groupListSS())) +
+        geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.5, binwidth = 1)+
+        stat_summary(fun.y=mean, geom="point", shape=5,size=0.5, color="black")+
+        labs(x = "Group", y = "Value")+
+        guides(fill=guide_legend(title="Group"))+scale_y_continuous(NULL, breaks = NULL)
+
     })
 
 
 
+    # Make a linear model based on the data in order to do an ANOVA analysis
+    modSS=reactive({
+      ll = lm(g123DataSS()~groupListSS())
+      return(ll)
+    })
+
+    # Get ANOVA test information
+    anSS =reactive({
+      model = anova(modSS())
+      return(model)
+    })
+
+    # Output an ANOVA table form above
+    output$anovaTableSS = renderTable({
+      anSS()
+    })
+
+    # Give the actual means & standard deviations of each group generated from the input from the user
+    anovaSumSS = reactive({data.frame(
+      Group = c("Group1", "Group2", "Group3"),
+      Means = c(mean(group1DataSS()), mean(group2DataSS()), mean(group3DataSS())),
+      StDev = c(sd(group1DataSS()),sd(group2DataSS()), sd(group3DataSS()))
+    )
+    })
+
+    # Output the summary information about the three groups
+    output$anovaDatSumSS = renderTable({
+      anovaSumSS()
+    })
 
 
 
+    #Ends everything
 
   }
 )
-
-
-
