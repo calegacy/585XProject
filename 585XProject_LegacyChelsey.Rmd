@@ -48,7 +48,7 @@ knitr::include_graphics("mainPanel.png")
 
 
 # Future work & Conclusions
-Now that this portion of the project is completed, there are a few other features to be added.  I would like all the graphs to adjust their size and spacing once the dashboard is hidden. This will also look better when the app is launched in the browser. I intend to get feedback on the app and then I can make more adjustments to the format and launching of the different tabs.  There are also adjustments to be made on the content of the tabs, which will be done outside of this project. 
+Now that this portion of the project is completed, there are a few other features to be added.  I would like all the graphs to adjust their size and spacing once the dashboard is hidden. This will also look better when the app is launched in the browser. I intend to get feedback on the app and then I can make more adjustments to the format and launching of the different tabs.  There are also adjustments to be made on the content of the tabs and to make the code run faster, which will be done outside of this project. 
 
 
 
