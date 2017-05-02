@@ -363,6 +363,19 @@ shinyApp(
 
 
     # -------------------------------------------- Inference for One Proportion Sampling Dist. ----------------------------#
+    #function for getting a binomial probability
+    binomProb = function(n, p){
+      out = rbinom(n,1,p)
+      propSuccess = round(length(which(out == 1))/n, 4)
+      return(propSuccess)
+    }
+
+    #function for setting bin size
+    binfun = function(data,n){
+      bin = (3.5*sd(data) )/(n^(1/3))
+      return(bin)
+    }
+
     # Create a single sample distribution
     # Get a sample from a binomial distribution
     pickVect = eventReactive(input$goProp,{
