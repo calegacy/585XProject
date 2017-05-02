@@ -27,7 +27,7 @@ output: pdf_document
 
 
 
-# Final result 
+# Final result  
 
 The final result makes use of the dashboard feature of Shiny Apps. As seen below, the dashboard on the side of the app has all of the options for tabs to put into the Shiny the main panel of the Shiny App.
 ```{r, out.width = "200px",out.height = "200px", echo = FALSE}
